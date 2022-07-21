@@ -52,13 +52,13 @@ func (p *Plan) List() ([]Plan, *rest_errors.RestErr) {
 	stmt, err := tortoise_db.Client.Prepare(queryListPlans)
 	if err != nil {
 		fmt.Println(err.Error())
-		return nil, rest_errors.NewInternalServerError("error when tying to get cashier ( Database Error)")
+		return nil, rest_errors.NewInternalServerError("error when tying to get plan ( Database Error)")
 	}
 	defer stmt.Close()
 	rows, err := stmt.Query() //update with limit and skip
 	if err != nil {
 		fmt.Println(err.Error())
-		return nil, rest_errors.NewInternalServerError("error when tying to get cashier ( Database Error)")
+		return nil, rest_errors.NewInternalServerError("error when tying to get plan ( Database Error)")
 	}
 	defer rows.Close()
 
@@ -95,7 +95,7 @@ func (p *Plan) List() ([]Plan, *rest_errors.RestErr) {
 		results = append(results, temp)
 	}
 	if len(results) == 0 {
-		return nil, rest_errors.NewNotFoundError(fmt.Sprintf("no cashiers matching status %s", "ok"))
+		return nil, rest_errors.NewNotFoundError(fmt.Sprintf("no plans matching status %s", "ok"))
 	}
 	return results, nil	
 }
@@ -103,7 +103,7 @@ func (p *Plan) List() ([]Plan, *rest_errors.RestErr) {
 func(plan *Plan) GetById() *rest_errors.RestErr {
 	stmt, err := tortoise_db.Client.Prepare(queryById)
 	if err != nil {
-		return rest_errors.NewInternalServerError("error when tying to get cashier")
+		return rest_errors.NewInternalServerError("error when tying to get plans")
 	}
 	defer stmt.Close()
 
@@ -170,7 +170,7 @@ func(plan *Plan) AddPromotion(promo Promotion) *rest_errors.RestErr {
 		plan.PlanId,
 	)
 	if err != nil {
-		return rest_errors.NewInternalServerError("error when tying to update user ")
+		return rest_errors.NewInternalServerError("error when tying to update plan ")
 	}
 	plan.PromotionValid = plan.isPromotionValid()
 	return nil
