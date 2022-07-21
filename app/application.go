@@ -19,7 +19,7 @@ func StartApplication() {
 	host = "localhost:3306"
 	username = "root"
 	password = ""
-	db_name = "users_db"
+	db_name = "tortoise"
 
 	cashiers_db.Init(username, password, host, db_name)
 

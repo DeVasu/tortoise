@@ -1,14 +1,11 @@
 package products
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/DeVasu/tortoise/datasources/mysql/cashiers_db"
-	"github.com/DeVasu/tortoise/utils/errors"
-	"github.com/DeVasu/tortoise/utils/rest_errors"
-	"github.com/federicoleon/bookstore_utils-go/logger"
+	rest_errors "github.com/DeVasu/tortoise/utils/errors"
 )
 
 
@@ -22,23 +19,21 @@ const (
 	
 )
 
-func(p *Product) Delete() rest_errors.RestErr {
+func(p *Product) Delete() *rest_errors.RestErr {
 	stmt, err := cashiers_db.Client.Prepare(queryDeleteProduct)
 	if err != nil {
-		logger.Error("error when trying to prepare get cashier statement", err)
-		return rest_errors.NewInternalServerError("error when tying to get cashier", errors.New("database error"))
+		return rest_errors.NewInternalServerError("error when tying to get cashier")
 	}
 	defer stmt.Close()
 
 	_, err = stmt.Exec(p.Id)
 	if err != nil {
-		logger.Error("error when trying to update user", err)
-		return rest_errors.NewInternalServerError("error when tying to update user", errors.New("database error"))
+		return rest_errors.NewInternalServerError("error when tying to update user")
 	}
 	return nil
 }
 
-func(p *Product) Update() rest_errors.RestErr {
+func(p *Product) Update() *rest_errors.RestErr {
 
 	temp := &Product{
 		Id : p.Id,
@@ -64,8 +59,7 @@ func(p *Product) Update() rest_errors.RestErr {
 
 	stmt, err := cashiers_db.Client.Prepare(queryUpdateProduct)
 	if err != nil {
-		logger.Error("error when trying to prepare get cashier statement", err)
-		return rest_errors.NewInternalServerError("error when tying to get cashier", errors.New("database error"))
+		return rest_errors.NewInternalServerError("error when tying to get cashier")
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(
@@ -77,17 +71,15 @@ func(p *Product) Update() rest_errors.RestErr {
 		temp.Id,
 	)
 	if err != nil {
-		logger.Error("error when trying to update user", err)
-		return rest_errors.NewInternalServerError("error when tying to update user", errors.New("database error"))
+		return rest_errors.NewInternalServerError("error when tying to update user")
 	}
 	return nil
 }
 
-func(p *Product) GetById() rest_errors.RestErr {
+func(p *Product) GetById() *rest_errors.RestErr {
 	stmt, err := cashiers_db.Client.Prepare(queryById)
 	if err != nil {
-		logger.Error("error when trying to prepare get cashier statement", err)
-		return rest_errors.NewInternalServerError("error when tying to get cashier", errors.New("database error"))
+		return rest_errors.NewInternalServerError("error when tying to get cashier")
 	}
 	defer stmt.Close()
 
@@ -106,52 +98,46 @@ func(p *Product) GetById() rest_errors.RestErr {
 		&p.Discount.Result,
 		&p.Discount.ExpiredAt,
 		); err != nil {
-		logger.Error("error when scan cashier row into cashier struct", err)
-		return rest_errors.NewInternalServerError("error when tying to gett cashier", errors.New("database error"))
+		return rest_errors.NewInternalServerError("error when tying to gett cashier")
 	}
 
 	return nil
 }
 
-func(product *Product) Create() rest_errors.RestErr {
+func(product *Product) Create() *rest_errors.RestErr {
 
 	product.CreatedAt = time.Now().Format("2006-01-02T15:04:05Z")
 	product.UpdatedAt = product.CreatedAt
 
 	stmt, err := cashiers_db.Client.Prepare(queryInsertProduct)
 	if err != nil {
-		logger.Error("error when trying to prepare prepare product create statement", err)
-		return rest_errors.NewInternalServerError("error when trying to get category", errors.New("database error"))
+		return rest_errors.NewInternalServerError("error when trying to get category")
 	}
 	defer stmt.Close()
 
 	insertResult, saveErr := stmt.Exec(product.CategoryId, product.Name, product.Image, product.Price, product.Stock, product.Discount.Qty, product.Discount.Type, product.Discount.Result, product.Discount.ExpiredAt, product.UpdatedAt, product.CreatedAt)
 	if saveErr != nil {
-		logger.Error("error when trying to save product", saveErr)
-		return rest_errors.NewInternalServerError("error when tying to save user", errors.New("database error"))
+		return rest_errors.NewInternalServerError("error when tying to save user")
 	}
 
 	productId, err := insertResult.LastInsertId()
 	if err != nil {
-		logger.Error("error when trying to get last insert id after creating a new user", err)
-		return rest_errors.NewInternalServerError("error when tying to save user", errors.New("database error"))
+		return rest_errors.NewInternalServerError("error when tying to save user")
 	}
 	product.Id = productId
 
 	return nil
 }
 
-func (p *Product) List() ([]Product, rest_errors.RestErr) {
+func (p *Product) List() ([]Product, *rest_errors.RestErr) {
 	stmt, err := cashiers_db.Client.Prepare(queryListProducts)
 	if err != nil {
-		logger.Error("error when trying to prepare get cashier statement", err)
-		return nil, rest_errors.NewInternalServerError("error when tying to get cashier", errors.New("database error"))
+		return nil, rest_errors.NewInternalServerError("error when tying to get cashier")
 	}
 	defer stmt.Close()
 	rows, err := stmt.Query() //update with limit and skip
 	if err != nil {
-		logger.Error("error when trying list cahisers", err)
-		return nil, rest_errors.NewInternalServerError("error when tying to get cashier", errors.New("database error"))
+		return nil, rest_errors.NewInternalServerError("error when tying to get cashier")
 	}
 	defer rows.Close()
 
@@ -171,8 +157,7 @@ func (p *Product) List() ([]Product, rest_errors.RestErr) {
 			&temp.Discount.Result,
 			&temp.Discount.ExpiredAt,
 			); err != nil {
-			logger.Error("error when scan cashier row into cashier struct", err)
-			return nil, rest_errors.NewInternalServerError("error when tying to gett cashier", errors.New("database error"))
+			return nil, rest_errors.NewInternalServerError("error when tying to gett cashier")
 		}
 		results = append(results, temp)
 	}

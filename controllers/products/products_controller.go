@@ -15,13 +15,13 @@ import (
 
 	"github.com/DeVasu/tortoise/domain/products"
 	"github.com/DeVasu/tortoise/utils"
-	"github.com/DeVasu/tortoise/utils/rest_errors"
+	rest_errors "github.com/DeVasu/tortoise/utils/errors"
 	"github.com/gin-gonic/gin"
 )
 
 
 
-func getUserId(userIdParam string) (int64, rest_errors.RestErr) {
+func getUserId(userIdParam string) (int64, *rest_errors.RestErr) {
 	userId, userErr := strconv.ParseInt(userIdParam, 10, 64)
 	if userErr != nil {
 		return 0, rest_errors.NewBadRequestError("user id should be a number")
@@ -33,7 +33,7 @@ func Delete(c *gin.Context) {
 
 	productId, idErr := getUserId(c.Param("productId"))
 	if idErr != nil {
-		c.JSON(idErr.Status(), idErr)
+		c.JSON(idErr.Status, idErr)
 		return
 	}
 
@@ -42,7 +42,7 @@ func Delete(c *gin.Context) {
 	temp.Id = productId
 	err := temp.Delete()
 	if err != nil {
-		c.JSON(err.Status(), err)
+		c.JSON(err.Status, err)
 		return
 	}
 	res := &utils.Response{
@@ -58,7 +58,7 @@ func Update(c *gin.Context) {
 
 	productId, idErr := getUserId(c.Param("productId"))
 	if idErr != nil {
-		c.JSON(idErr.Status(), idErr)
+		c.JSON(idErr.Status, idErr)
 		return
 	}
 
@@ -72,7 +72,7 @@ func Update(c *gin.Context) {
 
 	err := temp.Update()
 	if err != nil {
-		c.JSON(err.Status(), err)
+		c.JSON(err.Status, err)
 		return
 	}
 
@@ -89,7 +89,7 @@ func GetById(c *gin.Context) {
 	
 	productId, idErr := getUserId(c.Param("productId"))
 	if idErr != nil {
-		c.JSON(idErr.Status(), idErr)
+		c.JSON(idErr.Status, idErr)
 		return
 	}
 	result := &products.Product{
@@ -97,7 +97,7 @@ func GetById(c *gin.Context) {
 	}
 	err := result.GetById()
 	if err != nil {
-		c.JSON(err.Status(), err)
+		c.JSON(err.Status, err)
 		return
 	}
 	c.JSON(http.StatusOK, result)
