@@ -1,7 +1,7 @@
 # Tortoise - Plan API
 
 # Postman Documentation
-* https://documenter.getpostman.com/view/20763059/UzR1KhXx#authentication
+* https://documenter.getpostman.com/view/20763059/UzR1KhXx
 
 ## Points To Remember
 * Database with table name `plan` and `customerGoals` should already be existing on you mysql server. If not, create them using queries in SQL_QUERIES.md file.
