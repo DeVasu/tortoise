@@ -34,6 +34,9 @@ func(promo Promotion) isValid() *rest_errors.RestErr {
 	if promo.UsersLeft == 0 && promo.StartDate == "" {
 		return rest_errors.NewBadRequestError("either usersLeft or startDate/endDate has to be set")
 	}
+	if promo.UsersLeft != 0 && ( promo.StartDate != "" || promo.EndDate != "") {
+		return rest_errors.NewBadRequestError("you can't use both userLeft and startDate/endDate at the same time")
+	}
 	if promo.UsersLeft==0 {
 		if(promo.StartDate > promo.EndDate) {
 			return rest_errors.NewBadRequestError("startDate is bigger than endDate")

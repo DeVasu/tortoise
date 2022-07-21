@@ -1,4 +1,4 @@
-package cashiers_db
+package tortoise_db
 
 import (
 	"database/sql"
@@ -13,7 +13,7 @@ var (
 	username = "root"
 	password = ""
 	host     = "localhost:3306"
-	name     = "users_db"
+	name     = "tortoise_db"
 )
 
 func Init(us, ps, hs, db_name string) {

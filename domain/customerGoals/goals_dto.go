@@ -5,11 +5,15 @@ import (
 	rest_errors "github.com/DeVasu/tortoise/utils/errors"
 )
 
+type User struct {
+	UserId	int64 `json:"userId"`
+}
+
 type Goal struct {
 	GoalId				int64		`json:"goalId,omitempty"`
 	PlanId 				int64  		`json:"planId,omitempty"`
 	UserId 				int64 		`json:"userId,omitempty"`
-	SelectedAmount 		int64 		`json:"selectedAmoung"`
+	SelectedAmount 		int64 		`json:"selectedAmount"`
 	SelectedTenure 		int64 		`json:"selectedTenure"`
 	StartedDate 		string 		`json:"startedDate,omitempty"`
 	DepositedAmount 	int64 		`json:"depositedAmount,omitempty"`

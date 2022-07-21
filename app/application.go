@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 
-	"github.com/DeVasu/tortoise/datasources/mysql/cashiers_db"
+	"github.com/DeVasu/tortoise/datasources/mysql/tortoise_db"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,7 +21,7 @@ func StartApplication() {
 	password = ""
 	db_name = "tortoise"
 
-	cashiers_db.Init(username, password, host, db_name)
+	tortoise_db.Init(username, password, host, db_name)
 
 
 	mapUrls()

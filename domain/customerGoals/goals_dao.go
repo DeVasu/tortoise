@@ -1,21 +1,18 @@
 package goals
 
 import (
+	// "database/sql"
+	"fmt"
 	"time"
 
-	"github.com/DeVasu/tortoise/datasources/mysql/cashiers_db"
+	"github.com/DeVasu/tortoise/datasources/mysql/tortoise_db"
+	"github.com/DeVasu/tortoise/domain/plan"
 	rest_errors "github.com/DeVasu/tortoise/utils/errors"
 )
 
 const (
 	queryInsertGoal        = 	"INSERT INTO customerGoals(planId, userId, selectedAmount, selectedTenure, startedDate, depositedAmount, benefitPercentage, benefitType, createdAt, updatedAt) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
-	queryListProducts 	   = 	"SELECT * from plan;"
-	queryById 			   = 	"SELECT * from plan where planId=?;"
-	queryAddPromotion 	   = 	"UPDATE plan SET promotionPercentage=?, promotionUsers=?, promotionStartDate=?, promotionEndDate=? WHERE planId = ?;"
-	queryDeletePromotion   = 	"UPDATE plan SET promotionPercentage=NULL, promotionUsers=NULL, promotionStartDate=NULL, promotionEndDate=NULL WHERE planId = ?;"
-	queryDeleteProduct = "DELETE FROM products WHERE id=?;"
-	queryUpdateProduct = "UPDATE products SET categoryId=?, name=?, image=?, price=?, stock=? WHERE id = ?;"
-	
+	queryListGoals	   	     = 	"SELECT * from customerGoals;"
 )
 
 func(goal *Goal) Create() *rest_errors.RestErr {
@@ -34,7 +31,7 @@ func(goal *Goal) Create() *rest_errors.RestErr {
 	goal.UpdatedAt = goal.CreatedAt
 
 	// starting to insert
-	stmt, err := cashiers_db.Client.Prepare(queryInsertGoal)
+	stmt, err := tortoise_db.Client.Prepare(queryInsertGoal)
 	if err != nil {
 		return rest_errors.NewInternalServerError("error when trying to get goals")
 	}
@@ -49,252 +46,66 @@ func(goal *Goal) Create() *rest_errors.RestErr {
 	if err != nil {
 		return rest_errors.NewInternalServerError("error when tying to save goal")
 	}
+
+	tempPlan := &plan.Plan{
+		PlanId: goal.PlanId,
+	}
+	decrementErr := tempPlan.DecrementPromotion(); 
+	if decrementErr != nil {
+		return decrementErr
+	}
+
 	goal.GoalId = goalId
 	return nil
 }
 
-// func (p *Plan) List() ([]Plan, *rest_errors.RestErr) {
-// 	stmt, err := cashiers_db.Client.Prepare(queryListProducts)
-// 	if err != nil {
-// 		fmt.Println(err.Error())
-// 		return nil, rest_errors.NewInternalServerError("error when tying to get cashier ( Database Error)")
-// 	}
-// 	defer stmt.Close()
-// 	rows, err := stmt.Query() //update with limit and skip
-// 	if err != nil {
-// 		fmt.Println(err.Error())
-// 		return nil, rest_errors.NewInternalServerError("error when tying to get cashier ( Database Error)")
-// 	}
-// 	defer rows.Close()
+func (goal *Goal) List() ([]Goal, *rest_errors.RestErr) {
+	stmt, err := tortoise_db.Client.Prepare(queryListGoals)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, rest_errors.NewInternalServerError("error when tying to get goals ( Database Error)")
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query() 
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, rest_errors.NewInternalServerError("error when tying to get goals ( Database Error)")
+	}
+	defer rows.Close()
 
-// 	results := make([]Plan, 0)
-// 	for rows.Next() {
-// 		var temp Plan
-// 		var promo Promotion
-// 		var newPercentage, usersLeft  sql.NullInt64
-// 		var startDate, endDate sql.NullString
-// 		if err := rows.Scan(
-// 			&temp.PlanId,
-// 			&temp.PlanName,
-// 			&temp.AmountOptions,
-// 			&temp.TenureOptions,
-// 			&temp.BenefitPercentage,
-// 			&temp.BenefitType,
-// 			&newPercentage,
-// 			&usersLeft,
-// 			&startDate,
-// 			&endDate,
-// 			&temp.UpdatedAt,
-// 			&temp.CreatedAt,
-// 			); err != nil {
-// 			fmt.Println(err.Error())
-// 			return nil, rest_errors.NewInternalServerError("error when tying to get plans")
-// 		}
-// 		promo.EndDate = endDate.String
-// 		promo.StartDate = startDate.String
-// 		promo.NewPercentage = newPercentage.Int64
-// 		promo.UsersLeft = usersLeft.Int64
+	results := make([]Goal, 0)
+	for rows.Next() {
+		var temp Goal
+		// var promo Promotion
+		// var newPercentage, usersLeft  sql.NullInt64
+		// var startDate, endDate sql.NullString
+		if err := rows.Scan(
+			&temp.GoalId,
+			&temp.PlanId,
+			&temp.UserId,
+			&temp.SelectedAmount,
+			&temp.SelectedTenure,
+			&temp.StartedDate,
+			&temp.DepositedAmount,
+			&temp.BenefitPercentage,
+			&temp.BenefitType,
+			&temp.UpdatedAt,
+			&temp.CreatedAt,
+			); err != nil {
+			fmt.Println(err.Error())
+			return nil, rest_errors.NewInternalServerError("error when tying to get Goals")
+		}
+		// promo.EndDate = endDate.String
+		// promo.StartDate = startDate.String
+		// promo.NewPercentage = newPercentage.Int64
+		// promo.UsersLeft = usersLeft.Int64
 
-// 		temp.Promotion = &promo
-// 		temp.PromotionValid = temp.isPromotionValid()
-// 		results = append(results, temp)
-// 	}
-// 	if len(results) == 0 {
-// 		return nil, rest_errors.NewNotFoundError(fmt.Sprintf("no cashiers matching status %s", "ok"))
-// 	}
-// 	return results, nil	
-// }
-
-// func(plan *Plan) GetById() *rest_errors.RestErr {
-// 	stmt, err := cashiers_db.Client.Prepare(queryById)
-// 	if err != nil {
-// 		return rest_errors.NewInternalServerError("error when tying to get cashier")
-// 	}
-// 	defer stmt.Close()
-
-// 	result := stmt.QueryRow(plan.PlanId)
-
-// 	var promo Promotion
-// 	var newPercentage, usersLeft sql.NullInt64
-// 	var startDate, endDate sql.NullString
-
-// 	if err := result.Scan(
-// 		&plan.PlanId,
-// 		&plan.PlanName,
-// 		&plan.AmountOptions,
-// 		&plan.TenureOptions,
-// 		&plan.BenefitPercentage,
-// 		&plan.BenefitType,
-// 		&newPercentage,
-// 		&usersLeft,
-// 		&startDate,
-// 		&endDate,
-// 		&plan.UpdatedAt,
-// 		&plan.CreatedAt,
-// 		); err != nil {
-// 		return rest_errors.NewInternalServerError("error when tying to gett plan")
-// 	}
-// 	promo.EndDate = endDate.String
-// 	promo.StartDate = startDate.String
-// 	promo.NewPercentage = newPercentage.Int64
-// 	promo.UsersLeft = usersLeft.Int64
-
-// 	plan.Promotion = &promo
-
-// 	return nil
-// }
-
-// func(plan *Plan) AddPromotion(promo Promotion) *rest_errors.RestErr {
-
-// 	valErr := promo.isValid()
-// 	if valErr != nil {
-// 		return valErr
-// 	}
-
-// 	plan.GetById()
-
-// 	if plan.Promotion.NewPercentage != 0 {
-// 		return rest_errors.NewBadRequestError("promtion already exists for this plan, please delete existing one")
-// 	}
-
-// 	stmt, err := cashiers_db.Client.Prepare(queryAddPromotion)
-// 	if err != nil {
-// 		return rest_errors.NewInternalServerError("error when tying to get plan")
-// 	}
-// 	defer stmt.Close()
-
-// 	plan.Promotion = &promo
-// 	_, err = stmt.Exec(
-// 		plan.Promotion.NewPercentage,
-// 		plan.Promotion.UsersLeft,
-// 		plan.Promotion.StartDate,
-// 		plan.Promotion.EndDate,
-// 		plan.PlanId,
-// 	)
-// 	if err != nil {
-// 		return rest_errors.NewInternalServerError("error when tying to update user ")
-// 	}
-// 	return nil
-// }	
-
-// func(plan *Plan) DeletePromotion() *rest_errors.RestErr {
-
-// 	stmt, err := cashiers_db.Client.Prepare(queryDeletePromotion)
-// 	if err != nil {
-// 		return rest_errors.NewInternalServerError("error when tying to get plan")
-// 	}
-// 	defer stmt.Close()
-
-// 	_, err = stmt.Exec(
-// 		plan.PlanId,
-// 	)
-// 	if err != nil {
-// 		return rest_errors.NewInternalServerError("error when tying to delete promotion ")
-// 	}
-// 	return nil
-// }	
-
-
-	// if p.CategoryId != 0 {
-	// 	temp.CategoryId = p.CategoryId
-	// }
-	// if len(p.Name) != 0 {
-	// 	temp.Name = p.Name
-	// }
-	// if len(p.Image) != 0 {
-	// 	temp.Image = p.Image
-	// }
-	// if p.Price != 0 {
-	// 	temp.Price = p.Price
-	// }
-	// if p.Stock != 0 {
-	// 	temp.Stock = p.Stock
-	// }
-
-// func(p *Product) Delete() *rest_errors.RestErr {
-// 	stmt, err := cashiers_db.Client.Prepare(queryDeleteProduct)
-// 	if err != nil {
-// 		return rest_errors.NewInternalServerError("error when tying to get cashier", errors.New("database error"))
-// 	}
-// 	defer stmt.Close()
-
-// 	_, err = stmt.Exec(p.Id)
-// 	if err != nil {
-// 		return rest_errors.NewInternalServerError("error when tying to update user", errors.New("database error"))
-// 	}
-// 	return nil
-// }
-
-// func(p *Product) Update() *rest_errors.RestErr {
-
-// 	temp := &Product{
-// 		Id : p.Id,
-// 	}
-// 	temp.GetById()
-
-// 	if p.CategoryId != 0 {
-// 		temp.CategoryId = p.CategoryId
-// 	}
-// 	if len(p.Name) != 0 {
-// 		temp.Name = p.Name
-// 	}
-// 	if len(p.Image) != 0 {
-// 		temp.Image = p.Image
-// 	}
-// 	if p.Price != 0 {
-// 		temp.Price = p.Price
-// 	}
-// 	if p.Stock != 0 {
-// 		temp.Stock = p.Stock
-// 	}
-
-
-// 	stmt, err := cashiers_db.Client.Prepare(queryUpdateProduct)
-// 	if err != nil {
-// 		return rest_errors.NewInternalServerError("error when tying to get cashier", errors.New("database error"))
-// 	}
-// 	defer stmt.Close()
-// 	_, err = stmt.Exec(
-// 		temp.CategoryId,
-// 		temp.Name,
-// 		temp.Image,
-// 		temp.Price,
-// 		temp.Stock,
-// 		temp.Id,
-// 	)
-// 	if err != nil {
-// 		return rest_errors.NewInternalServerError("error when tying to update user", errors.New("database error"))
-// 	}
-// 	return nil
-// }
-
-// func(p *Product) GetById() *rest_errors.RestErr {
-// 	stmt, err := cashiers_db.Client.Prepare(queryById)
-// 	if err != nil {
-// 		return rest_errors.NewInternalServerError("error when tying to get cashier", errors.New("database error"))
-// 	}
-// 	defer stmt.Close()
-
-// 	result := stmt.QueryRow(p.Id)
-
-// 	if err := result.Scan(&p.Id,
-// 		&p.CategoryId,
-// 		&p.Name,
-// 		&p.Image,
-// 		&p.Price,
-// 		&p.Stock,
-// 		&p.UpdatedAt,
-// 		&p.CreatedAt,
-// 		&p.Discount.Qty, 
-// 		&p.Discount.Type,
-// 		&p.Discount.Result,
-// 		&p.Discount.ExpiredAt,
-// 		); err != nil {
-// 		return rest_errors.NewInternalServerError("error when tying to gett cashier", errors.New("database error"))
-// 	}
-
-// 	return nil
-// }
-
-
-
+		// temp.Promotion = &promo
+		// temp.PromotionValid = temp.isPromotionValid()
+		results = append(results, temp)
+	}
+	if len(results) == 0 {
+		return nil, rest_errors.NewNotFoundError(fmt.Sprintf("no cashiers matching status %s", "ok"))
+	}
+	return results, nil	
+}

@@ -5,19 +5,17 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/DeVasu/tortoise/datasources/mysql/cashiers_db"
+	"github.com/DeVasu/tortoise/datasources/mysql/tortoise_db"
 	rest_errors "github.com/DeVasu/tortoise/utils/errors"
 )
 
 const (
-	queryInsertPlan        = 	"INSERT INTO plan(planName, amountOptions, tenureOptions, benefitPercentage, benefitType, createdAt, updatedAt) VALUES(?, ?, ?, ?, ?, ?, ?);"
-	queryListProducts 	   = 	"SELECT * from plan;"
-	queryById 			   = 	"SELECT * from plan where planId=?;"
-	queryAddPromotion 	   = 	"UPDATE plan SET promotionPercentage=?, promotionUsers=?, promotionStartDate=?, promotionEndDate=? WHERE planId = ?;"
-	queryDeletePromotion   = 	"UPDATE plan SET promotionPercentage=NULL, promotionUsers=NULL, promotionStartDate=NULL, promotionEndDate=NULL WHERE planId = ?;"
-	queryDeleteProduct = "DELETE FROM products WHERE id=?;"
-	queryUpdateProduct = "UPDATE products SET categoryId=?, name=?, image=?, price=?, stock=? WHERE id = ?;"
-	
+	queryInsertPlan          = 	"INSERT INTO plan(planName, amountOptions, tenureOptions, benefitPercentage, benefitType, createdAt, updatedAt) VALUES(?, ?, ?, ?, ?, ?, ?);"
+	queryListPlans	   	     = 	"SELECT * from plan;"
+	queryById 			     = 	"SELECT * from plan where planId=?;"
+	queryAddPromotion 	     = 	"UPDATE plan SET promotionPercentage=?, promotionUsers=?, promotionStartDate=?, promotionEndDate=? WHERE planId = ?;"
+	queryDeletePromotion     = 	"UPDATE plan SET promotionPercentage=NULL, promotionUsers=NULL, promotionStartDate=NULL, promotionEndDate=NULL WHERE planId = ?;"
+	queryDecrementPromotion  = 	"UPDATE plan SET promotionUsers = promotionUsers - 1  WHERE planId = ? AND promotionUsers != 0"
 )
 
 func(plan *Plan) Create() *rest_errors.RestErr {
@@ -31,7 +29,7 @@ func(plan *Plan) Create() *rest_errors.RestErr {
 	plan.UpdatedAt = plan.CreatedAt
 
 	// starting to insert
-	stmt, err := cashiers_db.Client.Prepare(queryInsertPlan)
+	stmt, err := tortoise_db.Client.Prepare(queryInsertPlan)
 	if err != nil {
 		return rest_errors.NewInternalServerError("error when trying to get plans")
 	}
@@ -51,7 +49,7 @@ func(plan *Plan) Create() *rest_errors.RestErr {
 }
 
 func (p *Plan) List() ([]Plan, *rest_errors.RestErr) {
-	stmt, err := cashiers_db.Client.Prepare(queryListProducts)
+	stmt, err := tortoise_db.Client.Prepare(queryListPlans)
 	if err != nil {
 		fmt.Println(err.Error())
 		return nil, rest_errors.NewInternalServerError("error when tying to get cashier ( Database Error)")
@@ -103,7 +101,7 @@ func (p *Plan) List() ([]Plan, *rest_errors.RestErr) {
 }
 
 func(plan *Plan) GetById() *rest_errors.RestErr {
-	stmt, err := cashiers_db.Client.Prepare(queryById)
+	stmt, err := tortoise_db.Client.Prepare(queryById)
 	if err != nil {
 		return rest_errors.NewInternalServerError("error when tying to get cashier")
 	}
@@ -144,10 +142,7 @@ func(plan *Plan) GetById() *rest_errors.RestErr {
 
 func(plan *Plan) AddPromotion(promo Promotion) *rest_errors.RestErr {
 
-	valErr := promo.isValid()
-	if valErr != nil {
-		return valErr
-	}
+
 
 	plan.GetById()
 
@@ -155,7 +150,12 @@ func(plan *Plan) AddPromotion(promo Promotion) *rest_errors.RestErr {
 		return rest_errors.NewBadRequestError("promtion already exists for this plan, please delete existing one")
 	}
 
-	stmt, err := cashiers_db.Client.Prepare(queryAddPromotion)
+	valErr := promo.isValid()
+	if valErr != nil {
+		return valErr
+	}
+
+	stmt, err := tortoise_db.Client.Prepare(queryAddPromotion)
 	if err != nil {
 		return rest_errors.NewInternalServerError("error when tying to get plan")
 	}
@@ -178,7 +178,7 @@ func(plan *Plan) AddPromotion(promo Promotion) *rest_errors.RestErr {
 
 func(plan *Plan) DeletePromotion() *rest_errors.RestErr {
 
-	stmt, err := cashiers_db.Client.Prepare(queryDeletePromotion)
+	stmt, err := tortoise_db.Client.Prepare(queryDeletePromotion)
 	if err != nil {
 		return rest_errors.NewInternalServerError("error when tying to get plan")
 	}
@@ -192,108 +192,19 @@ func(plan *Plan) DeletePromotion() *rest_errors.RestErr {
 	}
 	return nil
 }	
+func(plan *Plan) DecrementPromotion() *rest_errors.RestErr {
 
+	stmt, err := tortoise_db.Client.Prepare(queryDecrementPromotion)
+	if err != nil {
+		return rest_errors.NewInternalServerError("error when tying to get plan")
+	}
+	defer stmt.Close()
 
-	// if p.CategoryId != 0 {
-	// 	temp.CategoryId = p.CategoryId
-	// }
-	// if len(p.Name) != 0 {
-	// 	temp.Name = p.Name
-	// }
-	// if len(p.Image) != 0 {
-	// 	temp.Image = p.Image
-	// }
-	// if p.Price != 0 {
-	// 	temp.Price = p.Price
-	// }
-	// if p.Stock != 0 {
-	// 	temp.Stock = p.Stock
-	// }
-
-// func(p *Product) Delete() *rest_errors.RestErr {
-// 	stmt, err := cashiers_db.Client.Prepare(queryDeleteProduct)
-// 	if err != nil {
-// 		return rest_errors.NewInternalServerError("error when tying to get cashier", errors.New("database error"))
-// 	}
-// 	defer stmt.Close()
-
-// 	_, err = stmt.Exec(p.Id)
-// 	if err != nil {
-// 		return rest_errors.NewInternalServerError("error when tying to update user", errors.New("database error"))
-// 	}
-// 	return nil
-// }
-
-// func(p *Product) Update() *rest_errors.RestErr {
-
-// 	temp := &Product{
-// 		Id : p.Id,
-// 	}
-// 	temp.GetById()
-
-// 	if p.CategoryId != 0 {
-// 		temp.CategoryId = p.CategoryId
-// 	}
-// 	if len(p.Name) != 0 {
-// 		temp.Name = p.Name
-// 	}
-// 	if len(p.Image) != 0 {
-// 		temp.Image = p.Image
-// 	}
-// 	if p.Price != 0 {
-// 		temp.Price = p.Price
-// 	}
-// 	if p.Stock != 0 {
-// 		temp.Stock = p.Stock
-// 	}
-
-
-// 	stmt, err := cashiers_db.Client.Prepare(queryUpdateProduct)
-// 	if err != nil {
-// 		return rest_errors.NewInternalServerError("error when tying to get cashier", errors.New("database error"))
-// 	}
-// 	defer stmt.Close()
-// 	_, err = stmt.Exec(
-// 		temp.CategoryId,
-// 		temp.Name,
-// 		temp.Image,
-// 		temp.Price,
-// 		temp.Stock,
-// 		temp.Id,
-// 	)
-// 	if err != nil {
-// 		return rest_errors.NewInternalServerError("error when tying to update user", errors.New("database error"))
-// 	}
-// 	return nil
-// }
-
-// func(p *Product) GetById() *rest_errors.RestErr {
-// 	stmt, err := cashiers_db.Client.Prepare(queryById)
-// 	if err != nil {
-// 		return rest_errors.NewInternalServerError("error when tying to get cashier", errors.New("database error"))
-// 	}
-// 	defer stmt.Close()
-
-// 	result := stmt.QueryRow(p.Id)
-
-// 	if err := result.Scan(&p.Id,
-// 		&p.CategoryId,
-// 		&p.Name,
-// 		&p.Image,
-// 		&p.Price,
-// 		&p.Stock,
-// 		&p.UpdatedAt,
-// 		&p.CreatedAt,
-// 		&p.Discount.Qty, 
-// 		&p.Discount.Type,
-// 		&p.Discount.Result,
-// 		&p.Discount.ExpiredAt,
-// 		); err != nil {
-// 		return rest_errors.NewInternalServerError("error when tying to gett cashier", errors.New("database error"))
-// 	}
-
-// 	return nil
-// }
-
-
-
+	_, err = stmt.Exec(
+		plan.PlanId,
+	)
+	if err != nil {
+		return rest_errors.NewInternalServerError("error when tying to delete promotion")
+	}
+	return nil
+}	
