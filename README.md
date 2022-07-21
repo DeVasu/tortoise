@@ -2,6 +2,9 @@
 
 ## Points To Remember
 * Database with table name `plan` and `customerGoals` should already be existing on you mysql server and you will be asked to enter connection details initially
+* You can find queries to run to create Table in SQL_QUERIES.md file
+* After all tables are setup in your database, Update information at `app/application.go` file for database connection
+
 ## Current Mappings
 
 * GET `/ping` --> To test availability of the server
