@@ -3,6 +3,7 @@
 ## Points To Remember
 * Database with table name `plan` and `customerGoals` should already be existing on you mysql server. If not, create them using queries in SQL_QUERIES.md file.
 * After all tables are setup in your database, Update information at `app/application.go` file for database connection
+* You can also set the port on which this application runs on, from `app/application.go` file (default --> 3030)
 
 ## Current Mappings
 
